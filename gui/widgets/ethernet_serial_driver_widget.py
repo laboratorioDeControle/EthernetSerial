@@ -240,6 +240,9 @@ class EthernetSerialDriverWidget(QWidget):
         self._te_log.setEnabled(True)
         self._chb_register_msgs.setChecked(True)
 
+        self.__serial_widgets_set_enable__(True)
+        self.__eth_widgets_set_enable__(True)
+
     def __init_backend__(self):
         self._bt_start_stop_server.clicked.connect(self.__bt_eth_start_stop_server_callback__)
         self._bt_serial_open_close.clicked.connect(self.__bt_serial_open_close_callback__)
@@ -257,6 +260,19 @@ class EthernetSerialDriverWidget(QWidget):
 
         self.__com_port_update_callback__()
 
+    def __eth_widgets_set_enable__(self, enable: bool):
+        self._le_eth_ip.setEnabled(enable)
+        self._le_eth_port.setEnabled(enable)
+        self._le_eth_incoming_bytes.setEnabled(enable)
+        self._bt_send_eth.setEnabled(not enable)
+
+    def __serial_widgets_set_enable__(self, enable: bool):
+        self._le_serial_baud_rate.setEnabled(enable)
+        self._le_serial_read_timeout.setEnabled(enable)
+        self._le_serial_incoming_bytes.setEnabled(enable)
+        self._cb_serial_com_ports.setEnabled(enable)
+        self._bt_send_serial.setEnabled(not enable)
+
     def __bt_eth_start_stop_server_callback__(self):
         if not self._eth_bus.is_opened:
             self._bt_start_stop_server.setText("Fechar Servidor")
@@ -265,6 +281,8 @@ class EthernetSerialDriverWidget(QWidget):
         else:
             self._bt_start_stop_server.setText("Abrir Servidor")
             self._eth_bus.stop()
+
+        self.__eth_widgets_set_enable__(not self._eth_bus.is_opened)
 
     def __bt_serial_open_close_callback__(self):
         if not self._serial_bus.is_connected:
@@ -276,6 +294,8 @@ class EthernetSerialDriverWidget(QWidget):
         else:
             self._bt_serial_open_close.setText("Abrir Comunicação")
             self._serial_bus.disconnect()
+
+        self.__serial_widgets_set_enable__(not self._serial_bus.is_connected)
 
     def __format_msg__(self) -> bytes:
         msg_orig: str = self._le_msg_to_send.text()
