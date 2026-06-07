@@ -6,11 +6,11 @@
   "serial_baud_rate": 115200,
   "serial_buffer_size": 150,
   "serial_read_timeout": 0.01,
-  "auto_transmit": 1,
+  "auto_transmit": 0,
   "msg_to_send": "[0x47, 0x61, 0x62, 0x72, 0x69, 0x65, 0x6c]",
   "send_msg_use_hex": 1,
   "log": {
     "register_msgs": 1,
-    "parse": 0
+    "parse": 3
   }
 }
