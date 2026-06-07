@@ -72,7 +72,7 @@ class EthSocketServer:
         client_connection.close()
         self._have_client = False
 
-    def start(self, ip: str = '', port: int = 8081, buff_size: int = 1024):
+    def start(self, ip: str = '127.0.0.1', port: int = 8081, buff_size: int = 1024):
         self._ip = ip
         self._port = port
         self._buff_size = buff_size
