@@ -1,6 +1,8 @@
 from datetime import datetime
-from PySide6.QtWidgets import (QWidget, QGridLayout, QLineEdit, QComboBox, QPushButton, QGroupBox, QLabel, QTextEdit,
+from PySide6.QtWidgets import (QWidget, QGridLayout, QLineEdit, QComboBox, QPushButton, QGroupBox, QLabel,
                                QCheckBox, QFileDialog)
+
+from gui.widgets.bus_msg_log_widget import BusMsgLogWidget
 
 from communication.bus.serial import Serial, get_serial_ports
 from communication.bus.eth_socket_server import EthSocketServer
@@ -123,14 +125,6 @@ class EthernetSerialDriverWidget(QWidget):
         self._le_serial_read_timeout.setText(str(value))
 
     @property
-    def register_msgs(self) -> bool:
-        return self._chb_register_msgs.isChecked()
-
-    @register_msgs.setter
-    def register_msgs(self, value: bool):
-        self._chb_register_msgs.setChecked(value)
-
-    @property
     def auto_transmit(self) -> bool:
         return self._chb_auto_transmit.isChecked()
 
@@ -172,10 +166,7 @@ class EthernetSerialDriverWidget(QWidget):
         self._bt_send_serial: QPushButton = QPushButton("Enviar via Serial")
 
         self._gb_log: QGroupBox = QGroupBox("Tráfego de Mensagens:")
-        self._te_log: QTextEdit = QTextEdit()
-        self._bt_export_log: QPushButton = QPushButton("Salvar")
-        self._bt_clear_log: QPushButton = QPushButton("Limpar")
-        self._chb_register_msgs: QCheckBox = QCheckBox("Registrar Mensagens")
+        self._log: BusMsgLogWidget = BusMsgLogWidget()
 
         self._serial_bus: Serial = Serial()
         self._eth_bus: EthSocketServer = EthSocketServer()
@@ -228,17 +219,15 @@ class EthernetSerialDriverWidget(QWidget):
 
         lyt_log: QGridLayout = QGridLayout()
         self._gb_log.setLayout(lyt_log)
-        lyt_log.addWidget(self._te_log, 0, 0, 1, 5)
-        lyt_log.addWidget(self._bt_clear_log, 1, 3, 1, 1)
-        lyt_log.addWidget(self._bt_export_log, 1, 4, 1, 1)
-        lyt_log.addWidget(self._chb_register_msgs, 1, 2, 1, 1)
+        lyt_log.addWidget(self._log, 0, 0, 1, 1)
+
+        credit: QLineEdit = QLineEdit("Desenvolvido por: Eng. Gabriel Rodrigues de Azeredo - Email: gabriel-bjj@hotmail.com")
+        credit.setEnabled(False)
 
         self._layout.addWidget(gb_bus, 0, 0, 1, 1)
         self._layout.addWidget(self._gb_send, 1, 0, 1, 2)
         self._layout.addWidget(self._gb_log, 2, 0, 1, 2)
-
-        self._te_log.setEnabled(True)
-        self._chb_register_msgs.setChecked(True)
+        self._layout.addWidget(credit, 3, 0, 1, 2)
 
         self.__serial_widgets_set_enable__(True)
         self.__eth_widgets_set_enable__(True)
@@ -246,8 +235,6 @@ class EthernetSerialDriverWidget(QWidget):
     def __init_backend__(self):
         self._bt_start_stop_server.clicked.connect(self.__bt_eth_start_stop_server_callback__)
         self._bt_serial_open_close.clicked.connect(self.__bt_serial_open_close_callback__)
-        self._bt_clear_log.clicked.connect(self.__bt_clear_log_callback__)
-        self._bt_export_log.clicked.connect(self.__bt_export_log_callback__)
         self._bt_send_eth.clicked.connect(self.__bt_send_eth_callback__)
         self._bt_send_serial.clicked.connect(self.__bt_send_serial_callback__)
 
@@ -357,27 +344,19 @@ class EthernetSerialDriverWidget(QWidget):
         new_msg: str = self.__format_msg_dec_hex__()
         self._le_msg_to_send.setText(new_msg)
 
-    def __bt_clear_log_callback__(self):
-        self._te_log.setText("")
-
-    def __bt_export_log_callback__(self):
-        file_name: tuple = QFileDialog.getSaveFileName(self, "Tráfego de Mensagens",
-                                                       filter="Arquivo de Texto (*.txt)")
-
-        if file_name[0] != "":
-            f = open(file_name[0], "w")
-            f.write(self._te_log.toPlainText())
-            f.close()
-
     def __bt_send_eth_callback__(self):
         if self._eth_bus.have_client:
             msg: bytes = self.__format_msg__()
             self._eth_bus.write(msg)
 
+            self.log_append("ETHERNET", "TX", msg)
+
     def __bt_send_serial_callback__(self):
         if self._serial_bus.is_connected:
             msg: bytes = self.__format_msg__()
             self._serial_bus.write(msg)
+
+            self.log_append("SERIAL", "TX", msg)
 
     def __com_port_update_callback__(self):
         self._cb_serial_com_ports.clear()
@@ -387,43 +366,24 @@ class EthernetSerialDriverWidget(QWidget):
             self._cb_serial_com_ports.addItem(com)
 
     def __serial_msg_arrive__(self, msg: bytes):
-        if self.register_msgs:
-            self.log_append("SERIAL", msg)
+        self.log_append("SERIAL", "RX", msg)
 
         if self._eth_bus.have_client and self._chb_auto_transmit.isChecked():
             self._eth_bus.write(msg)
 
+            self.log_append("ETHERNET", "TX", msg)
+
     def __eth_msg_arrive__(self, msg: bytes):
-        if self.register_msgs:
-            self.log_append("ETHERNET", msg)
+        self.log_append("ETHERNET", "RX", msg)
 
         if self._serial_bus.is_connected and self._chb_auto_transmit.isChecked():
             self._serial_bus.write(msg)
 
-    def log_append(self, com_bus: str, data: bytes):
-        date_time: str = datetime.today().strftime('%H:%M:%S') + ": "
-        msg: str = "["
+            self.log_append("SERIAL", "TX", msg)
 
-        for index, field in enumerate(data):
-            hex_field: str = hex(field)
-            hex_field_split: list = hex_field.split("x")
-
-            if len(hex_field_split[1]) == 1:
-                hex_field_split[1] = "0" + hex_field_split[1]
-
-            hex_field = hex_field_split[0] + "x" + hex_field_split[1]
-
-            if index != len(data) - 1:
-                msg += hex_field + ", "
-            else:
-                msg += hex_field + "]"
-
-        msg = date_time + "[" + com_bus + "] -> " + msg + "\n"
-
-        te_log_scroll = self._te_log.verticalScrollBar()
-        old_scroll_ratio = te_log_scroll.value() / (te_log_scroll.maximum() or 1)
-        self._te_log.setText(self._te_log.toPlainText() + msg)
-        te_log_scroll.setValue(round(old_scroll_ratio * te_log_scroll.maximum()))
+    def log_append(self, com_bus: str, direction: str, data: bytes):
+        date_time: str = datetime.today().strftime('%H:%M:%S')
+        self._log.append(com_bus, direction, date_time, data)
 
     def serialize(self) -> dict:
         return {
@@ -434,10 +394,10 @@ class EthernetSerialDriverWidget(QWidget):
             "serial_baud_rate": self.serial_baud_rate,
             "serial_buffer_size": self.serial_buffer_size,
             "serial_read_timeout": self.serial_read_timeout,
-            "register_msgs": int(self.register_msgs),
             "auto_transmit": int(self.auto_transmit),
             "msg_to_send": self._le_msg_to_send.text(),
-            "send_msg_use_hex": int(self.send_msg_use_hex)
+            "send_msg_use_hex": int(self.send_msg_use_hex),
+            "log": self._log.serialize()
         }
 
     def deserialize(self, parameters: dict) -> None:
@@ -448,7 +408,7 @@ class EthernetSerialDriverWidget(QWidget):
         self.serial_baud_rate = parameters["serial_baud_rate"]
         self.serial_buffer_size = parameters["serial_buffer_size"]
         self.serial_read_timeout = parameters["serial_read_timeout"]
-        self.register_msgs = bool(parameters["register_msgs"])
         self.auto_transmit = bool(parameters["auto_transmit"])
-        self._le_msg_to_send.setText(parameters["msg_to_send"])
         self.send_msg_use_hex = bool(parameters["send_msg_use_hex"])
+        self._le_msg_to_send.setText(parameters["msg_to_send"])
+        self._log.deserialize(parameters["log"])
