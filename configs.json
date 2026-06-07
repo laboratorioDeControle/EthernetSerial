@@ -11,6 +11,6 @@
   "send_msg_use_hex": 1,
   "log": {
     "register_msgs": 1,
-    "parse": 3
+    "parse": 0
   }
 }

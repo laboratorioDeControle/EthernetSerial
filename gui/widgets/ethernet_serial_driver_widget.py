@@ -1,6 +1,6 @@
 from datetime import datetime
 from PySide6.QtWidgets import (QWidget, QGridLayout, QLineEdit, QComboBox, QPushButton, QGroupBox, QLabel,
-                               QCheckBox, QFileDialog)
+                               QCheckBox)
 
 from gui.widgets.bus_msg_log_widget import BusMsgLogWidget
 
