@@ -2,7 +2,7 @@
   "eth_ip": "192.168.18.82",
   "eth_port": 8081,
   "eth_buff_size": 1024,
-  "serial_com_port": "COM14",
+  "serial_com_port": "COM4",
   "serial_baud_rate": 115200,
   "serial_buffer_size": 150,
   "serial_read_timeout": 0.01,
@@ -11,6 +11,6 @@
   "send_msg_use_hex": 1,
   "log": {
     "register_msgs": 1,
-    "parse": 0
+    "parse": 1
   }
 }

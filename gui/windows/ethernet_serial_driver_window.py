@@ -21,11 +21,11 @@ class EthernetSerialWindow(QMainWindow):
         self.__init_ui__()
 
     def __init_ui__(self):
-        self.setWindowTitle("Ethernet <-> Serial Driver - v" + self.__version__)
+        self.setWindowTitle("Ethernet <-> Serial - v" + self.__version__)
         self.setWindowIcon(QIcon("images/icone.png"))
 
         self.setCentralWidget(self._main_widget)
-        self.setFixedSize(800, 600)
+        self.setFixedSize(800, 800)
 
         self.deserialize()
 
