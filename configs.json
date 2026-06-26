@@ -1,16 +1,16 @@
 {
-  "eth_ip": "192.168.18.82",
+  "eth_ip": "127.0.0.1",
   "eth_port": 8081,
   "eth_buff_size": 1024,
-  "serial_com_port": "COM4",
+  "serial_com_port": "COM3",
   "serial_baud_rate": 115200,
   "serial_buffer_size": 150,
   "serial_read_timeout": 0.01,
-  "auto_transmit": 0,
-  "msg_to_send": "[0x47, 0x61, 0x62, 0x72, 0x69, 0x65, 0x6c]",
+  "auto_transmit": 1,
+  "msg_to_send": "[0x03, 0x04, 0x00]",
   "send_msg_use_hex": 1,
   "log": {
-    "register_msgs": 1,
+    "register_msgs": 0,
     "parse": 1
   }
 }
