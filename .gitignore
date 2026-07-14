@@ -184,3 +184,4 @@ cython_debug/
 /.idea
 .idea/EthernetSerial.iml
 .idea/misc.xml
+configs.json
